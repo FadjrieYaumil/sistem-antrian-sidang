@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SI-POAS - Pendaftaran Online Antrian Sidang</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <style>
+        :root {
+            --primary: #00FF00;
+            --primary-dark: #8bc926;
+            --primary-light: #e8ffb6;
+            --secondary: #000000;
+            --accent: #e53935;
+            --success: #00FF00;
+            --warning: #ff9800;
+            --dark-bg: #121212;
+            --card-dark: #1e1e1e;
+            --text-light: #f5f5f5;
+            --text-muted: #aaaaaa;
+            --gray: #666;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            line-height: 1.6;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 30% 50%, rgba(178, 255, 31, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 20%, rgba(178, 255, 31, 0.05) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .logo img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid var(--primary);
+        }
+
+        .logo-text {
+            text-align: center;
+        }
+
+        .logo h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--text-light);
+            margin-bottom: 5px;
+        }
+
+        .logo .subtitle {
+            font-size: 1rem;
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .form-card {
+            background: linear-gradient(135deg, var(--card-dark) 0%, #2a2a2a 100%);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--primary);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .form-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+        }
+
+        .form-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+
+        .input-field {
+            position: relative;
+        }
+
+        .input-field input, .input-field select {
+            width: 100%;
+            padding: 15px 45px 15px 20px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 2px solid #333;
+            border-radius: 12px;
+            color: var(--text-light);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .input-field input:focus, .input-field select:focus {
+            outline: none;
+            border-color: var(--primary);
+            background-color: rgba(0, 255, 0, 0.05);
+            box-shadow: 0 0 0 3px rgba(0, 255, 0, 0.1);
+            transform: scale(1.02);
+        }
+
+        .input-field i {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            transition: color 0.3s ease;
+        }
+
+        .input-field input:focus + i {
+            color: var(--primary);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--secondary);
+            border: none;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .btn-submit::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-submit:hover::before {
+            left: 100%;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 255, 0, 0.3);
+        }
+
+        .queue-info {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--secondary);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .queue-number {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin: 10px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .estimated-time {
+            font-size: 1.3rem;
+            font-weight: 500;
+            margin: 10px 0;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            color: white;
+            z-index: 1000;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            max-width: 350px;
+            backdrop-filter: blur(10px);
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--secondary);
+        }
+
+        .notification.error {
+            background: linear-gradient(135deg, var(--accent), #c62828);
+        }
+
+        .notification.info {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+        }
+
+        .floating-element {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* DATE INPUT STYLES */
+        .date-input-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .date-input-container input[type="date"] {
+            width: 100%;
+            padding: 15px 45px 15px 20px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 2px solid #333;
+            border-radius: 12px;
+            color: var(--text-light);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+        }
+
+        .date-input-container input[type="date"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            background-color: rgba(0, 255, 0, 0.05);
+            box-shadow: 0 0 0 3px rgba(0, 255, 0, 0.1);
+            transform: scale(1.02);
+        }
+
+        .date-input-container i {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            transition: color 0.3s ease;
+            pointer-events: none;
+        }
+
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            background: var(--primary);
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: floatParticle 15s infinite linear;
+        }
+
+        @keyframes floatParticle {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+            }
+        }
+
+        .time-slots {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .time-slot {
+            padding: 12px;
+            text-align: center;
+            border: 2px solid #333;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .time-slot:hover {
+            background: rgba(0, 255, 0, 0.1);
+            border-color: var(--primary);
+        }
+
+        .time-slot.selected {
+            background: var(--primary);
+            color: var(--secondary);
+            border-color: var(--primary);
+        }
+
+        .time-slot.disabled {
+            background: rgba(244, 67, 54, 0.2);
+            color: #666;
+            border-color: #666;
+            cursor: not-allowed;
+        }
+
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header {
+                margin-bottom: 20px;
+                padding: 15px;
+            }
+            
+            .logo {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .logo img {
+                width: 70px;
+                height: 70px;
+            }
+            
+            .logo h1 {
+                font-size: 1.6rem;
+            }
+            
+            .form-card {
+                padding: 25px;
+                border-radius: 16px;
+                margin-bottom: 20px;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .input-field input, .input-field select {
+                padding: 14px 40px 14px 15px;
+            }
+            
+            .input-field i {
+                right: 15px;
+            }
+            
+            .time-slots {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .notification {
+                right: 15px;
+                left: 15px;
+                max-width: none;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Particle Background -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Notifications -->
+    <div id="notification" class="notification"></div>
+
+    <div class="container">
+        <div class="header floating-element">
+            <div class="logo">
+                <img src="logo.jpeg" alt="Logo Pengadilan">
+                <div class="logo-text">
+                    <h1>SI-POAS</h1>
+                    <p class="subtitle">Sistem Pendaftaran Online Antrian Sidang</p>
+                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 5px;">Pengadilan Agama Tarutung</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-card floating-element">
+            <h2 style="text-align: center; margin-bottom: 30px;">Formulir Pendaftaran Sidang</h2>
+
+            <form id="registration-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nama" class="form-label">Nama Lengkap</label>
+                        <div class="input-field">
+                            <input type="text" id="nama" name="nama" placeholder="Masukkan nama lengkap" required>
+                            <i class="fas fa-user"></i>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email</label>
+                        <div class="input-field">
+                            <input type="email" id="email" name="email" placeholder="Masukkan email" required>
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="whatsapp" class="form-label">No WhatsApp</label>
+                        <div class="input-field">
+                            <input type="tel" id="whatsapp" name="whatsapp" placeholder="Masukkan nomor WhatsApp" required>
+                            <i class="fab fa-whatsapp"></i>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="no_perkara" class="form-label">No Perkara</label>
+                        <div class="input-field">
+                            <input type="text" id="no_perkara" name="no_perkara" placeholder="Masukkan nomor perkara" required>
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tanggal_sidang" class="form-label">Tanggal Sidang</label>
+                        <div class="date-input-container">
+                            <input type="date" id="tanggal_sidang" name="tanggal_sidang" required>
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="waktu_sidang" class="form-label">Waktu Sidang</label>
+                        <div class="time-slots" id="time-slots">
+                            <!-- Time slots will be generated by JavaScript -->
+                        </div>
+                        <input type="hidden" id="waktu_sidang" name="waktu_sidang" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-paper-plane"></i> Daftar Sidang
+                </button>
+            </form>
+        </div>
+
+        <!-- Queue Information -->
+        <div id="queue-info" class="form-card" style="display: none;">
+            <h2 style="text-align: center; margin-bottom: 20px;">Informasi Antrian Anda</h2>
+            <div class="queue-info">
+                <h3>Nomor Antrian</h3>
+                <div class="queue-number" id="user-queue-number">-</div>
+                <div class="estimated-time" id="estimated-time">-</div>
+                <p style="margin-top: 15px; font-size: 0.9rem;">
+                    Anda akan menerima notifikasi via email ketika giliran sidang Anda mendekati
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ================================
+        // KONFIGURASI EMAILJS
+        // ================================
+        const EMAILJS_CONFIG = {
+            PUBLIC_KEY: "HCCzIO1iChSuIxGgk",
+            SERVICE_ID: "service_h3zxr5q",
+            TEMPLATES: {
+                CONFIRMATION: "template_5jvzx2f",
+                REMINDER: "template_c18nu1t"
+            },
+            ADMIN_EMAIL: "protocoltype01@gmail.com"
+        };
+
+        // Inisialisasi EmailJS
+        emailjs.init(EMAILJS_CONFIG.PUBLIC_KEY);
+
+        // Sistem Pendaftaran untuk User
+        class PendaftaranSystem {
+            constructor() {
+                this.queue = JSON.parse(localStorage.getItem('sidang_queue')) || [];
+                this.sessionActive = localStorage.getItem('session_active') === 'true' || true;
+                this.scheduledReminders = new Map();
+            }
+
+            // Mendaftarkan user baru
+            async registerUser(userData) {
+                if (!this.sessionActive) return null;
+
+                // Cek apakah sudah mencapai batas maksimal 6 peserta
+                if (this.queue.length >= 6) {
+                    throw new Error('Kuota sidang hari ini sudah penuh (maksimal 6 peserta). Silakan daftar kembali besok.');
+                }
+
+                // Cek apakah waktu yang dipilih masih tersedia
+                const selectedTime = userData.waktu_sidang;
+                const timeTaken = this.queue.some(user => user.waktu_sidang === selectedTime);
+                
+                if (timeTaken) {
+                    throw new Error('Waktu sidang yang dipilih sudah tidak tersedia. Silakan pilih waktu lain.');
+                }
+
+                const queueNumber = this.getNextQueueNumber(selectedTime);
+                
+                const userWithQueue = {
+                    ...userData,
+                    queueNumber,
+                    registrationTime: new Date().toISOString(),
+                    status: 'menunggu',
+                    reminderSent: false
+                };
+
+                this.queue.push(userWithQueue);
+                this.queue.sort((a, b) => a.queueNumber - b.queueNumber);
+
+                this.saveToStorage();
+                
+                // Kirim email konfirmasi ke peserta
+                await this.sendConfirmationEmail(userWithQueue);
+                
+                // Jadwalkan reminder 1 jam sebelumnya
+                this.scheduleReminder(userWithQueue);
+                
+                return userWithQueue;
+            }
+
+            // Mendapatkan nomor antrian berdasarkan waktu
+            getNextQueueNumber(selectedTime) {
+                const timeOrder = {
+                    '09:00': 1,
+                    '10:00': 2,
+                    '11:00': 3,
+                    '12:00': 4,
+                    '13:00': 5,
+                    '14:00': 6
+                };
+                return timeOrder[selectedTime];
+            }
+
+            // Kirim email konfirmasi ke peserta
+            async sendConfirmationEmail(user) {
+                const templateParams = {
+                    to_email: user.email,
+                    to_name: user.nama,
+                    queue_number: user.queueNumber,
+                    no_perkara: user.no_perkara,
+                    tanggal_sidang: user.tanggal_sidang,
+                    waktu_sidang: user.waktu_sidang
+                };
+
+                try {
+                    await emailjs.send(
+                        EMAILJS_CONFIG.SERVICE_ID, 
+                        EMAILJS_CONFIG.TEMPLATES.CONFIRMATION, 
+                        templateParams
+                    );
+                    console.log(`Email konfirmasi berhasil dikirim ke ${user.email}`);
+                    return true;
+                } catch (error) {
+                    console.error('Error mengirim email konfirmasi:', error);
+                    return false;
+                }
+            }
+
+            // Jadwalkan reminder 1 jam sebelum sidang
+            scheduleReminder(user) {
+                const sidangDateTime = new Date(`${user.tanggal_sidang}T${user.waktu_sidang}`);
+                const reminderTime = new Date(sidangDateTime.getTime() - (60 * 60 * 1000));
+                
+                const now = new Date();
+                const delay = reminderTime.getTime() - now.getTime();
+                
+                if (delay > 0 && !user.reminderSent) {
+                    const timeoutId = setTimeout(async () => {
+                        await this.sendReminderNotification(user);
+                        user.reminderSent = true;
+                        this.saveToStorage();
+                    }, delay);
+                    
+                    this.scheduledReminders.set(user.queueNumber, timeoutId);
+                }
+            }
+
+            // Kirim notifikasi reminder
+            async sendReminderNotification(user) {
+                const templateParams = {
+                    to_email: user.email,
+                    to_name: user.nama,
+                    from_name: "Sistem Sidang Keagamaan",
+                    reply_to: EMAILJS_CONFIG.ADMIN_EMAIL,
+                    queue_number: user.queueNumber,
+                    no_perkara: user.no_perkara,
+                    tanggal_sidang: user.tanggal_sidang,
+                    waktu_sidang: user.waktu_sidang,
+                    message: `Pengingat: Sidang Anda akan dimulai dalam 1 jam. Nomor antrian: ${user.queueNumber} - Waktu Sidang: ${user.waktu_sidang}`
+                };
+
+                try {
+                    await emailjs.send(
+                        EMAILJS_CONFIG.SERVICE_ID, 
+                        EMAILJS_CONFIG.TEMPLATES.REMINDER, 
+                        templateParams
+                    );
+                    console.log(`Email reminder berhasil dikirim ke ${user.email}`);
+                    return true;
+                } catch (error) {
+                    console.error('Error mengirim email reminder:', error);
+                    return false;
+                }
+            }
+
+            // Mendapatkan slot waktu yang tersedia
+            getAvailableTimeSlots() {
+                const takenSlots = this.queue.map(user => user.waktu_sidang);
+                const allSlots = [
+                    { time: '09:00', number: 1 },
+                    { time: '10:00', number: 2 },
+                    { time: '11:00', number: 3 },
+                    { time: '12:00', number: 4 },
+                    { time: '13:00', number: 5 },
+                    { time: '14:00', number: 6 }
+                ];
+                
+                return allSlots.map(slot => ({
+                    time: slot.time,
+                    number: slot.number,
+                    available: !takenSlots.includes(slot.time)
+                }));
+            }
+
+            // Menyimpan data ke localStorage
+            saveToStorage() {
+                localStorage.setItem('sidang_queue', JSON.stringify(this.queue));
+                localStorage.setItem('session_active', this.sessionActive);
+            }
+        }
+
+        // UI Controller untuk Pendaftar
+        class PendaftarUIController {
+            constructor() {
+                this.system = new PendaftaranSystem();
+                this.initializeEventListeners();
+                this.enhanceDateInput();
+                this.updateTimeSlots();
+            }
+
+            initializeEventListeners() {
+                // Form submission
+                document.getElementById('registration-form').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    await this.handleRegistration();
+                });
+            }
+
+            enhanceDateInput() {
+                const dateInput = document.getElementById('tanggal_sidang');
+                
+                // Set minimum date to today
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.min = today;
+                dateInput.value = today;
+                
+                // Add custom validation
+                dateInput.addEventListener('change', (e) => {
+                    const selectedDate = new Date(e.target.value);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
+                    if (selectedDate < today) {
+                        this.showNotification('Tidak dapat memilih tanggal yang sudah lewat', 'error');
+                        dateInput.value = today.toISOString().split('T')[0];
+                    }
+                });
+            }
+
+            async handleRegistration() {
+                if (!this.system.sessionActive) {
+                    this.showNotification('Sesi sidang hari ini sudah ditutup. Silakan daftar kembali besok.', 'error');
+                    return;
+                }
+
+                const formData = new FormData(document.getElementById('registration-form'));
+                const userData = {
+                    nama: formData.get('nama'),
+                    email: formData.get('email'),
+                    whatsapp: formData.get('whatsapp'),
+                    no_perkara: formData.get('no_perkara'),
+                    tanggal_sidang: formData.get('tanggal_sidang'),
+                    waktu_sidang: formData.get('waktu_sidang')
+                };
+
+                try {
+                    const registeredUser = await this.system.registerUser(userData);
+                    if (registeredUser) {
+                        this.showQueueInfo(registeredUser);
+                        this.showNotification('Pendaftaran berhasil! Silakan cek email untuk konfirmasi.', 'success');
+                        
+                        // Reset form dengan tanggal default hari ini
+                        document.getElementById('registration-form').reset();
+                        const today = new Date().toISOString().split('T')[0];
+                        document.getElementById('tanggal_sidang').value = today;
+                        
+                        // Reset time slots selection
+                        document.querySelectorAll('.time-slot').forEach(slot => {
+                            slot.classList.remove('selected');
+                        });
+                        
+                        this.updateTimeSlots();
+                    } else {
+                        this.showNotification('Tidak dapat mendaftar. Sesi sidang mungkin sudah ditutup.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error detail:', error);
+                    this.showNotification('Terjadi kesalahan: ' + error.message, 'error');
+                }
+            }
+
+            showQueueInfo(user) {
+                const queueInfo = document.getElementById('queue-info');
+                document.getElementById('user-queue-number').textContent = user.queueNumber;
+                document.getElementById('estimated-time').textContent = `Waktu sidang: ${user.waktu_sidang}`;
+                queueInfo.style.display = 'block';
+                
+                // Scroll ke info antrian di mobile
+                if (window.innerWidth <= 768) {
+                    queueInfo.scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+
+            updateTimeSlots() {
+                const timeSlotsContainer = document.getElementById('time-slots');
+                const availableSlots = this.system.getAvailableTimeSlots();
+                
+                timeSlotsContainer.innerHTML = '';
+                
+                availableSlots.forEach(slot => {
+                    const slotElement = document.createElement('div');
+                    slotElement.className = `time-slot ${slot.available ? '' : 'disabled'}`;
+                    slotElement.innerHTML = `<div>${slot.time}</div>`;
+
+                    if (slot.available) {
+                        slotElement.addEventListener('click', () => {
+                            // Reset semua slot
+                            document.querySelectorAll('.time-slot').forEach(s => {
+                                s.classList.remove('selected');
+                            });
+                            
+                            // Pilih slot yang diklik
+                            slotElement.classList.add('selected');
+                            document.getElementById('waktu_sidang').value = slot.time;
+                        });
+                    }
+                    
+                    timeSlotsContainer.appendChild(slotElement);
+                });
+            }
+
+            showNotification(message, type) {
+                const notification = document.getElementById('notification');
+                notification.textContent = message;
+                notification.className = `notification ${type} show`;
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 5000);
+            }
+        }
+
+        // Particle Background
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 15;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                const size = Math.random() * 20 + 5;
+                const left = Math.random() * 100;
+                const animationDuration = Math.random() * 20 + 10;
+                const animationDelay = Math.random() * 5;
+                const opacity = Math.random() * 0.1 + 0.05;
+                
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${left}%`;
+                particle.style.animationDuration = `${animationDuration}s`;
+                particle.style.animationDelay = `${animationDelay}s`;
+                particle.style.opacity = opacity;
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Initialize application
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticles();
+            new PendaftarUIController();
+        });
+    </script>
+</body>
+</html>
